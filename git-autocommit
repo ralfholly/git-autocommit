@@ -1,0 +1,134 @@
+#!/bin/bash
+
+GIT_AUTOCOMMIT_VERSION="1.0"
+GIT_AUTOCOMMIT_MESSAGE="<git-autocommit>"
+GIT_AUTOCOMMIT_INTERVAL_SECONDS=300 # Five minutes.
+GIT_AUTOCOMMIT_VERBOSE=0
+
+set -o errexit
+
+function fatal
+{
+    echo $1 >&2
+    exit 1
+}
+
+function verbose_log
+{
+    if [ $GIT_AUTOCOMMIT_VERBOSE -ne 0 ]; then
+        echo "$1"
+    fi
+}
+
+function autocommit 
+{
+    files=$(git status --porcelain) 
+    if [ ! -z "$files" ]; then
+        verbose_log "$(date +'%F %H:%M:%S')"
+        verbose_log "$files"
+        # Add everything that is there.
+        git add -A >/dev/null
+        # Commit
+        git commit -q -m "$GIT_AUTOCOMMIT_MESSAGE" >/dev/null
+    fi
+}
+
+function is_last_commit_autocommit
+{
+    line=$(git log --pretty=oneline -n 1)
+    array_line=($line)
+    commit=${array_line[0]}
+    message=${array_line[1]}
+
+    if [ "$message" == "$GIT_AUTOCOMMIT_MESSAGE" ]; then
+        return 0 # Yes
+    fi
+
+    return 1 # No
+}
+
+function soft_reset_to_parent_commit
+{
+    line_count=0
+    git log --pretty=oneline | while read line; do
+        ((++line_count))
+        array_line=($line)
+        commit=${array_line[0]}
+        message=${array_line[1]}
+
+        if [ "$message" != "$GIT_AUTOCOMMIT_MESSAGE" ]; then
+            # Stop if the last commit is not an autocommit message.
+            if [ $line_count -eq 1 ]; then
+                return
+            fi
+            echo "Soft resetting to $line"
+            git reset --soft "$commit"
+            echo "Now commit your combined changes or execute 'git reset HEAD@{1}' to undo."
+            return
+        fi
+    done
+
+}
+
+function show_help
+{
+cat <<EOM
+git-autocommit -- Periodically commits uncommitted changes.
+Version $GIT_AUTOCOMMIT_VERSION, Copyright 2015 by Ralf Holly. 
+Licensed under the terms of the MIT License, see LICENSE file.
+
+Options:
+    -h          Show help.
+    -s          Soft reset to parent commit of an auto-commit sequence.
+                (useful for squashing autocommits into a meaningful topic commit.)
+    -i <secs>   Set check-for-modifications interval to <secs> seconds.
+    -V          Enable verbose output
+EOM
+}
+
+# If ':' at beginning -> silent error mode!
+while getopts ":hsVi:" opt; do
+    case $opt in
+        h)
+            show_help
+            exit
+            ;;
+        s)
+            soft_reset_to_parent_commit
+            exit
+            ;;
+        V)
+            GIT_AUTOCOMMIT_VERBOSE=1
+            ;;
+        i)
+            GIT_AUTOCOMMIT_INTERVAL_SECONDS=$OPTARG
+            if [ -z "$GIT_AUTOCOMMIT_INTERVAL_SECONDS" ] || [ $GIT_AUTOCOMMIT_INTERVAL_SECONDS -le 0 ]; then
+                fatal "Please provide a positive poll interval"
+            fi
+            verbose_log "Setting poll interval to $GIT_AUTOCOMMIT_INTERVAL_SECONDS seconds"
+            ;;
+        :) 
+            fatal "Option -$OPTARG requires an argument" 
+            ;;
+        ?) 
+            fatal "Wrong option provided: -$OPTARG"
+            ;;
+    esac
+done
+
+if is_last_commit_autocommit; then 
+    echo -n "There are autocommits. Squash first? [y/N] "
+    read answer
+    case "$answer" in
+        [yY] | yes | YES)
+            soft_reset_to_parent_commit
+            exit
+            ;;
+    esac
+fi
+
+while true; do
+    autocommit
+    sleep $GIT_AUTOCOMMIT_INTERVAL_SECONDS
+done
+
