@@ -50,6 +50,7 @@ function is_last_commit_autocommit
 function soft_reset_to_parent_commit
 {
     line_count=0
+    autocommit_count=0
     git log --pretty=oneline | while read line; do
         ((++line_count))
         array_line=($line)
@@ -61,10 +62,13 @@ function soft_reset_to_parent_commit
             if [ $line_count -eq 1 ]; then
                 return
             fi
-            echo "Soft resetting to $line"
+
+            echo "Soft resetting to $line, squashed $autocommit_count autocommit(s)."
             git reset --soft "$commit"
             echo "Now commit your combined changes or execute 'git reset HEAD@{1}' to undo."
             return
+        else
+            ((++autocommit_count))
         fi
     done
 
