@@ -11,7 +11,7 @@ $ git-autocommit -i 60 -V   # Check every 60 seconds, verbose output.
 
 ... time passes ...
 
-CTRL-C                      # Abort git-commit.
+CTRL-C                      # Abort git-autocommit.
 
 $ git-autocommit -i 60 -V   # Rerun.
 There are autocommits. Squash first? [y/N] y
