@@ -19,3 +19,12 @@ Now commit your combined changes or execute 'git reset HEAD@{1}' to undo.
 $ git commit -m "Extracted base class 'AbstractMonitor'" # Commit all autocommits as a single commit.
 ```
 
+## History
+```
+Version  Change
+-------------------------------------------------------------------------------
+1.0      Intial version
+1.1      Ensure that any uncommitted changes are auto-committed before asking
+         user whether to squash first.
+```
+
