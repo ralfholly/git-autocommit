@@ -1,7 +1,7 @@
 # GIT-AUTOCOMMIT
 
 git-autocommit periodically checks for working copy changes. If changes exit they are auto-committed (`git -A && git commit -m "<git-autocommit>"`).
-By running 'git-autocommit -s' or by simply rerunning 'git-autocommit' after a previous abort via CTRL-C, a sequence of commits with a commit message of "<git-autocommit>" can be squashed into a single commit.
+By running 'git-autocommit -s' or by simply rerunning 'git-autocommit' after a previous abort via CTRL-C, a sequence of commits with a commit message of `<git-autocommit>` can be squashed into a single commit.
 
 ## Typical usage:
 
@@ -26,6 +26,6 @@ Version  Change
 1.0      Intial version
 1.1      Ensure that any uncommitted changes are auto-committed before asking
          user whether to squash first.
-1.2      Warn if local modifications exist upon '-s'
+1.2      Warn if local modifications exist upon passing '-s'.
 ```
 
