@@ -26,5 +26,6 @@ Version  Change
 1.0      Intial version
 1.1      Ensure that any uncommitted changes are auto-committed before asking
          user whether to squash first.
+1.2      Warn if unmodified changes exist upon '-s'
 ```
 
