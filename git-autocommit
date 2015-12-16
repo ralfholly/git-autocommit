@@ -1,6 +1,6 @@
 #!/bin/bash
 
-GIT_AUTOCOMMIT_VERSION="1.1"
+GIT_AUTOCOMMIT_VERSION="1.2"
 GIT_AUTOCOMMIT_MESSAGE="<git-autocommit>"
 GIT_AUTOCOMMIT_INTERVAL_SECONDS=300 # Five minutes.
 GIT_AUTOCOMMIT_VERBOSE=0
@@ -23,7 +23,7 @@ function verbose_log
 # Returns 0 if changes have been auto-commited, 1 if not.
 function autocommit
 {
-    files=$(git status --porcelain)
+    local files=$(git status --porcelain)
     if [ ! -z "$files" ]; then
         verbose_log "$(date +'%F %H:%M:%S')"
         verbose_log "$files"
@@ -40,10 +40,10 @@ function autocommit
 # Returns 0 if true, 1 if false.
 function is_last_commit_autocommit
 {
-    line=$(git log --pretty=oneline -n 1)
-    array_line=($line)
-    commit=${array_line[0]}
-    message=${array_line[1]}
+    local line=$(git log --pretty=oneline -n 1)
+    local array_line=($line)
+    local commit=${array_line[0]}
+    local message=${array_line[1]}
 
     if [ "$message" == "$GIT_AUTOCOMMIT_MESSAGE" ]; then
         return 0 # Yes
@@ -54,13 +54,13 @@ function is_last_commit_autocommit
 
 function soft_reset_to_parent_commit
 {
-    line_count=0
+    local line_count=0
     autocommit_count=0
     git log --pretty=oneline | while read line; do
         ((++line_count))
-        array_line=($line)
-        commit=${array_line[0]}
-        message=${array_line[1]}
+        local array_line=($line)
+        local commit=${array_line[0]}
+        local message=${array_line[1]}
 
         if [ "$message" != "$GIT_AUTOCOMMIT_MESSAGE" ]; then
             # Stop if the last commit is not an autocommit message.
@@ -76,7 +76,9 @@ function soft_reset_to_parent_commit
             ((++autocommit_count))
         fi
     done
-
+    if [ "$(git ls-files --modified --others --exclude-standard | wc -l)" -gt 0 ]; then
+        echo "WARNING: There are local, unstaged modifications."
+    fi
 }
 
 function show_help
