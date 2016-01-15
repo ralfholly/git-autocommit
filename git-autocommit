@@ -1,9 +1,12 @@
 #!/bin/bash
 
-GIT_AUTOCOMMIT_VERSION="1.2"
+GIT_AUTOCOMMIT_VERSION="1.3"
 GIT_AUTOCOMMIT_MESSAGE="<git-autocommit>"
 GIT_AUTOCOMMIT_INTERVAL_SECONDS=300 # Five minutes.
 GIT_AUTOCOMMIT_VERBOSE=0
+GIT_AUTOCOMMIT_QUIET=0
+
+git_autocommit_commit_count=0
 
 set -o errexit
 
@@ -13,9 +16,18 @@ function fatal
     exit 1
 }
 
+function print_autocommit_stats
+{
+    if [ $GIT_AUTOCOMMIT_QUIET -eq 0 ]; then
+        ((++git_autocommit_commit_count))
+        printf "\rLast commit: $(date +'%Y-%m-%d %H:%M:%S'), commits: $git_autocommit_commit_count ..."
+    fi
+}
+
 function verbose_log
 {
-    if [ $GIT_AUTOCOMMIT_VERBOSE -ne 0 ]; then
+    if [ $GIT_AUTOCOMMIT_VERBOSE -ne 0 ] && [ $GIT_AUTOCOMMIT_QUIET -eq 0 ]; then
+        echo ""
         echo "$1"
     fi
 }
@@ -25,12 +37,12 @@ function autocommit
 {
     local files=$(git status --porcelain)
     if [ ! -z "$files" ]; then
-        verbose_log "$(date +'%F %H:%M:%S')"
         verbose_log "$files"
         # Add everything that is there.
         git add -A >/dev/null
         # Commit
         git commit -q -m "$GIT_AUTOCOMMIT_MESSAGE" >/dev/null
+        print_autocommit_stats
         return 0
     fi
 
@@ -93,12 +105,13 @@ Options:
     -s          Soft reset to parent commit of an auto-commit sequence.
                 (useful for squashing autocommits into a meaningful topic commit.)
     -i <secs>   Set check-for-modifications interval to <secs> seconds.
-    -V          Enable verbose output
+    -q          Quiet (no output).
+    -V          Enable verbose output.
 EOM
 }
 
 # If ':' at beginning -> silent error mode!
-while getopts ":hsVi:" opt; do
+while getopts ":hsVqi:" opt; do
     case $opt in
         h)
             show_help
@@ -117,6 +130,9 @@ while getopts ":hsVi:" opt; do
                 fatal "Please provide a positive poll interval"
             fi
             verbose_log "Setting poll interval to $GIT_AUTOCOMMIT_INTERVAL_SECONDS seconds"
+            ;;
+        q)
+            GIT_AUTOCOMMIT_QUIET=1
             ;;
         :)
             fatal "Option -$OPTARG requires an argument"

@@ -27,5 +27,6 @@ Version  Change
 1.1      Ensure that any uncommitted changes are auto-committed before asking
          user whether to squash first.
 1.2      Warn if local modifications exist upon passing '-s'.
+1.3      Output autocommit stats by default and option '-q' to silence it.
 ```
 
